@@ -4,7 +4,17 @@ An end-to-end web application providing real-time multilingual Speech-to-Text (S
 
 ---
 
-## Features
+## 📸 Application Screenshots
+
+### 1. Real-time Multilingual Speech-to-Text Dashboard
+![Real-time Dashboard](screenshots/dashboard_live.png)
+
+### 2. Database History & Full CRUD Management
+![CRUD History Table](screenshots/crud_history.png)
+
+---
+
+## 🚀 Features
 - **Real-time Multilingual Speech-to-Text**:
   - Live WebSocket audio streaming directly from the microphone.
   - Handles Hindi (`hi-IN`), Indian English (`en-IN`), US English (`en-US`), and mixed code-switched Hindi-English sentences.
@@ -23,16 +33,17 @@ An end-to-end web application providing real-time multilingual Speech-to-Text (S
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 - **Backend**: FastAPI (Python 3.12), WebSockets, AsyncIO, Uvicorn
 - **Database & ORM**: SQLite, SQLAlchemy, aiosqlite
 - **Speech-to-Text**: Multilingual SpeechRecognition, Gemini Live compatible pipeline, Web Speech API fallback
 - **Text-to-Speech**: gTTS (Google Text-to-Speech open engine)
+- **Audio Transcoding**: In-memory FFmpeg (16kHz Mono PCM WAV)
 - **Frontend**: Responsive HTML5, Vanilla JavaScript (MediaRecorder, WebSockets, Web Audio API), Modern Dark Glassmorphic CSS
 
 ---
 
-## Getting Started
+## ⚙️ Getting Started
 
 ### 1. Prerequisites
 - Python 3.10+
