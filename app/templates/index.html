@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Multilingual Speech-to-Text & Transcription Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar / Navigation -->
+    <aside class="sidebar">
+      <div class="logo">
+        <i class="fa-solid fa-microphone-lines pulse-icon"></i>
+        <div>
+          <h2>VoxLingua</h2>
+          <span>Real-time Multilingual STT</span>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="#live-stt-section" class="active"><i class="fa-solid fa-headset"></i> Live Transcription</a>
+        <a href="#history-section"><i class="fa-solid fa-clock-rotate-left"></i> History & CRUD</a>
+        <a href="#upload-section"><i class="fa-solid fa-cloud-arrow-up"></i> File Audio STT</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="badge-tag">Hindi & English (Hinglish)</div>
+        <p class="small-text">Open-source & Live Multi-Engine</p>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <!-- Top header -->
+      <header class="top-nav">
+        <div class="status-indicator">
+          <span class="status-dot" id="ws-status-dot"></span>
+          <span id="ws-status-text">Disconnected</span>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline" onclick="loadHistory()">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh DB
+          </button>
+        </div>
+      </header>
+
+      <!-- Section 1: Live Multilingual STT -->
+      <section id="live-stt-section" class="card dashboard-card">
+        <div class="card-header">
+          <div>
+            <h3><i class="fa-solid fa-wave-square"></i> Real-time Speech to Text (Multilingual)</h3>
+            <p class="subtitle">Speak sentences in Hindi, English, or mixed (Hinglish). Real-time streaming transcription with WebSockets.</p>
+          </div>
+          <div class="lang-selector">
+            <label for="lang-select"><i class="fa-solid fa-language"></i> Language:</label>
+            <select id="lang-select">
+              <option value="hi-IN,en-IN">Multilingual (Hindi + English / Hinglish)</option>
+              <option value="hi-IN">Hindi (hi-IN)</option>
+              <option value="en-IN">Indian English (en-IN)</option>
+              <option value="en-US">English (US)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Audio Visualizer and Controls -->
+        <div class="recording-controls-bar">
+          <button id="record-btn" class="btn btn-primary btn-record" onclick="toggleRecording()">
+            <i class="fa-solid fa-microphone"></i> <span id="record-btn-text">Start Real-time Recording</span>
+          </button>
+          <button id="clear-btn" class="btn btn-secondary" onclick="clearLiveTranscript()">
+            <i class="fa-solid fa-trash-can"></i> Clear
+          </button>
+          <button id="save-transcript-btn" class="btn btn-success" onclick="saveCurrentTranscript()" disabled>
+            <i class="fa-solid fa-floppy-disk"></i> Save to Database
+          </button>
+          <button id="tts-listen-btn" class="btn btn-info" onclick="speakCurrentTranscript()" disabled>
+            <i class="fa-solid fa-volume-high"></i> TTS Listen
+          </button>
+          <div class="timer" id="recording-timer"><i class="fa-regular fa-clock"></i> 00:00</div>
+        </div>
+
+        <!-- Visual Audio Canvas Bar -->
+        <canvas id="visualizer" width="800" height="40"></canvas>
+
+        <!-- Live Streaming Output Area -->
+        <div class="transcript-display-container">
+          <div class="display-header">
+            <span><i class="fa-solid fa-align-left"></i> Live Stream Buffer</span>
+            <span id="char-count" class="badge">0 words</span>
+          </div>
+          <textarea id="live-transcript" placeholder="Transcribed words will appear here in real-time as you speak Hindi, English, or mixed sentences..."></textarea>
+          <div class="live-status-subtext" id="stream-status">Microphone idle. Click Start Recording to speak.</div>
+        </div>
+      </section>
+
+      <!-- Section 2: Audio File Upload STT -->
+      <section id="upload-section" class="card dashboard-card">
+        <div class="card-header">
+          <div>
+            <h3><i class="fa-solid fa-file-audio"></i> Audio File Transcription</h3>
+            <p class="subtitle">Upload pre-recorded audio (.wav, .mp3, .webm, .m4a) for instantaneous multilingual transcription.</p>
+          </div>
+        </div>
+        <div class="upload-zone" id="drop-zone">
+          <input type="file" id="audio-file-input" accept="audio/*" onchange="handleFileUpload(event)">
+          <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+          <p>Drag & drop an audio file here or <strong>browse</strong></p>
+          <span class="small-text">Supports Hindi, English, and multilingual conversations</span>
+        </div>
+        <div id="upload-result" class="upload-result hidden">
+          <h4>Transcription Output:</h4>
+          <p id="upload-result-text"></p>
+        </div>
+      </section>
+
+      <!-- Section 3: History & Full CRUD Management -->
+      <section id="history-section" class="card dashboard-card">
+        <div class="card-header flex-between">
+          <div>
+            <h3><i class="fa-solid fa-database"></i> Transcription History & CRUD Operations</h3>
+            <p class="subtitle">Database records stored via SQLite & SQLAlchemy. Search, Edit, Delete, Read, and Play (TTS).</p>
+          </div>
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="search-history" placeholder="Search transcriptions..." onkeyup="filterHistory()">
+          </div>
+        </div>
+
+        <!-- Table of Transcriptions -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 5%;">ID</th>
+                <th style="width: 20%;">Title</th>
+                <th style="width: 40%;">Transcription Text</th>
+                <th style="width: 15%;">Language / Mode</th>
+                <th style="width: 10%;">Date</th>
+                <th style="width: 10%;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <tr>
+                <td colspan="6" class="text-center text-muted">Loading records from database...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Edit Modal for CRUD Update -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-pen-to-square"></i> Edit Transcription Record</h3>
+        <button class="close-btn" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="edit-title" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Language</label>
+          <input type="text" id="edit-lang" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>Transcription Text</label>
+          <textarea id="edit-text" class="form-control" rows="5"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitEditTranscription()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audio-player" style="display:none;"></audio>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
